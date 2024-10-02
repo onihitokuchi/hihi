@@ -3,6 +3,8 @@ from pathlib import Path
 import streamlit as st
 
 from environment import (
+    SRC_LANG,
+    TGT_LANG,
     VOSK_MODEL_SMALL_CN,
     VOSK_MODEL_SMALL_EN_US,
     VOSK_MODEL_SMALL_FR,
@@ -10,8 +12,9 @@ from environment import (
     VOSK_MODEL_SMALL_PT,
 )
 from extraction import extraction
-from subtitling import subtitling
+from subtitling import subtitling, subtitling0
 from transcription import transcription
+from translation import translation
 
 
 def main() -> None:
@@ -44,7 +47,14 @@ def main() -> None:
 
     st.video(uploaded_file, format=uploaded_file.type)
 
-    locale = st.selectbox("Language", options=["en", "fr", "ja", "pt", "zh"], index=3)
+    column_1, column_2 = st.columns(2)
+    with column_1:
+        src_lang = st.selectbox(
+            "Translate from", options=list(SRC_LANG.keys()), index=5
+        )
+    with column_2:
+        tgt_lang = st.selectbox("Translate to", options=list(TGT_LANG.keys()), index=3)
+
     button = st.button("Subtitle", type="primary", use_container_width=True)
 
     SRT_PATH = str(PATH.joinpath(f"{uploaded_file.file_id}.srt"))
@@ -68,36 +78,48 @@ def main() -> None:
     elif button:
         with st.status("Subtitling in progress...") as status:
             # 0
-            status.update(label="[1/3] Audio extraction...")
+            status.update(label="[1/4] Audio extraction...")
 
             AUDIO_PATH = extraction(
                 VIDEO_PATH, str(PATH.joinpath(f"{uploaded_file.file_id}.wav"))
             )
 
             # 1
-            status.update(label="[2/3] Transcription...")
-            if locale == "en":
+            status.update(label="[2/4] Transcription...")
+            s = SRC_LANG[src_lang]
+
+            if s == "eng_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_EN_US
-            elif locale == "fr":
+            elif s == "fra_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_FR
-            elif locale == "ja":
+            elif s == "jpn_Jpan":
                 MODEL_PATH = VOSK_MODEL_SMALL_JA
-            elif locale == "pt":
+            elif s == "por_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_PT
-            elif locale == "zh":
+            elif s == "zho_Hans" or s == "zho_Hant":
                 MODEL_PATH = VOSK_MODEL_SMALL_CN
             else:
                 MODEL_PATH = None
 
             if not MODEL_PATH:
-                status.update("Lorem, ipsum dolor.", state="error")
+                status.update(label="Lorem, ipsum dolor.", state="error")
                 st.stop()
 
             r = transcription(AUDIO_PATH, MODEL_PATH)
 
             # 2
-            status.update(label="[3/3] Subtitling...")
-            subtitling(r, SRT_PATH)
+            status.update(label="[3/4] Subtitling...")
+            s = subtitling0(r, SRT_PATH)
+
+            print(
+                "================================================================================="
+            )
+            # 3
+            status.update(label="[4/4] Translation...")
+            r2 = translation(s, SRC_LANG[src_lang], TGT_LANG[tgt_lang])
+
+            status.update(label="[5/5] Saving subtitle...")
+            subtitling(r2, SRT_PATH)
 
             status.update(label="Subtitling complete.", state="complete")
 

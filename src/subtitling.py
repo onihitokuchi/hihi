@@ -4,7 +4,7 @@ from json import loads
 from srt import Subtitle, compose
 
 
-def subtitling(results: list, srt: str) -> str:
+def subtitling0(results: list, srt: str) -> list[Subtitle]:
     WORDS_PER_LINE = 7
     subs: list[Subtitle] = []
 
@@ -26,9 +26,12 @@ def subtitling(results: list, srt: str) -> str:
                 end=timedelta(seconds=line[-1]["end"]),
             )
 
+            print(s.content)
             subs.append(s)
 
+    return subs
+
+
+def subtitling(subs: list[Subtitle], srt):
     with open(srt, "w", encoding="UTF-8") as file:
         file.write(compose(subs))
-
-    return srt

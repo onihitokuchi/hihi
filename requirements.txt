@@ -3,4 +3,6 @@ pydub==0.25.1
 python-dotenv==1.0.1
 srt==3.5.3
 streamlit==1.38.0
+torch==2.4.1
+transformers==4.45.1
 vosk==0.3.45
