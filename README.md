@@ -1,13 +1,13 @@
 ![](./screenshot.png)
 
 ```sh
-python -m venv "./.venv"
-source "./venv/Scripts/activate"
-pip install -r requirements.txt
-```
+python -m venv ./.venv
+source ./.venv/bin/activate # On Microsoft Windows, is`./.venv/Scripts/activate`
 
-```sh
-source "./venv/Scripts/activate"
+chmod +x ./install.sh && ./install.sh
+
+cp ./.env.example ./.env
+
 streamlit run ./src/main.py
 ```
 
