@@ -77,26 +77,32 @@ def main() -> None:
         )
     elif button:
         with st.status("Subtitling in progress...") as status:
+            sl = SRC_LANG[src_lang]
+            tl = TGT_LANG[tgt_lang]
+            same_lang = sl == tl
+            number_of_jobs = 5
+            if same_lang:
+                number_of_jobs = 4
+
             # 0
-            status.update(label="[1/4] Audio extraction...")
+            status.update(label=f"[1/{number_of_jobs}] Audio extraction...")
 
             AUDIO_PATH = extraction(
                 VIDEO_PATH, str(PATH.joinpath(f"{uploaded_file.file_id}.wav"))
             )
 
             # 1
-            status.update(label="[2/4] Transcription...")
-            s = SRC_LANG[src_lang]
+            status.update(label=f"[2/{number_of_jobs}] Transcription...")
 
-            if s == "eng_Latn":
+            if sl == "eng_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_EN_US
-            elif s == "fra_Latn":
+            elif sl == "fra_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_FR
-            elif s == "jpn_Jpan":
+            elif sl == "jpn_Jpan":
                 MODEL_PATH = VOSK_MODEL_SMALL_JA
-            elif s == "por_Latn":
+            elif sl == "por_Latn":
                 MODEL_PATH = VOSK_MODEL_SMALL_PT
-            elif s == "zho_Hans" or s == "zho_Hant":
+            elif sl == "zho_Hans" or sl == "zho_Hant":
                 MODEL_PATH = VOSK_MODEL_SMALL_CN
             else:
                 MODEL_PATH = None
@@ -108,18 +114,26 @@ def main() -> None:
             r = transcription(AUDIO_PATH, MODEL_PATH)
 
             # 2
-            status.update(label="[3/4] Subtitling...")
-            s = subtitling0(r, SRT_PATH)
+            status.update(label=f"[3/{number_of_jobs}] Subtitling...")
+            s1 = subtitling0(r, SRT_PATH)
 
             print(
                 "================================================================================="
             )
             # 3
-            status.update(label="[4/4] Translation...")
-            r2 = translation(s, SRC_LANG[src_lang], TGT_LANG[tgt_lang])
+            if same_lang:
+                status.update(
+                    label=f"[{number_of_jobs}/{number_of_jobs}] Saving subtitle..."
+                )
+                subtitling(s1, SRT_PATH)
+            else:
+                status.update(label=f"[4/{number_of_jobs}] Translation...")
+                s2 = translation(s1, sl, tl)
 
-            status.update(label="[5/5] Saving subtitle...")
-            subtitling(r2, SRT_PATH)
+                status.update(
+                    label=f"[{number_of_jobs}/{number_of_jobs}] Saving subtitle..."
+                )
+                subtitling(s2, SRT_PATH)
 
             status.update(label="Subtitling complete.", state="complete")
 
